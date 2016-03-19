@@ -28,3 +28,4 @@ def threads = (0..<THREADS).collect { num ->
 threads.each { it.join(); }
 
 System.out.println("Final state: ${ref}");
+System.out.println("Final val: ${val}");
