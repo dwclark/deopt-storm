@@ -11,8 +11,8 @@ System.out.println("Attach tools now, then hit enter...");
 System.in.read();
 System.out.println("deopt-storm beginning now...");
 
-def threads = (0..<THREADS).collect {
-    Thread.start {
+def threads = (0..<THREADS).collect { num ->
+    Thread.start "deopt-${num}", {
         (0..<ITERATIONS).each {
             List<State> myChain = State.chain(ThreadLocalRandom.current().nextInt(1, State.MAX_LENGTH));
             State state = myChain.find { c -> c.select(); };
