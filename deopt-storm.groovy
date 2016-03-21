@@ -7,15 +7,17 @@ final int ITERATIONS = args[1].toInteger();
 final AtomicReference<StateId> ref = new AtomicReference();
 final AtomicReference<Object> val = new AtomicReference();
 
-System.out.println("Attach tools now, then hit enter...");
+println("Attach tools now, then hit enter...");
 System.in.read();
-System.out.println("deopt-storm beginning now...");
+println("deopt-storm beginning now...");
 
 def threads = (0..<THREADS).collect { num ->
     Thread.start "deopt-${num}", {
+        List<State> myChain = new ArrayList();
+        def finder = { it.select(); };
         (0..<ITERATIONS).each {
-            List<State> myChain = State.chain(ThreadLocalRandom.current().nextInt(1, State.MAX_LENGTH));
-            State state = myChain.find { c -> c.select(); };
+            int length = ThreadLocalRandom.current().nextInt(1, State.MAX_LENGTH);
+            State state = State.chain(length, myChain).find(finder);
 
             //force the jvm to track outcome of execute()
             StateId id = state.execute();
@@ -27,5 +29,5 @@ def threads = (0..<THREADS).collect { num ->
 
 threads.each { it.join(); }
 
-System.out.println("Final state: ${ref}");
-System.out.println("Final val: ${val}");
+println("Final state: ${ref}");
+println("Final val: ${val}");

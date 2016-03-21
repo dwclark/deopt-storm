@@ -5,11 +5,11 @@ trait Even {
 }
 
 trait LessLikely {
-    boolean select() { return ThreadLocalRandom.current().nextInt(0, 5); }
+    boolean select() { return ThreadLocalRandom.current().nextInt(0, 5) == 0; }
 }
 
 trait Rare {
-    boolean select() { return ThreadLocalRandom.current().nextInt(0, 20); }
+    boolean select() { return ThreadLocalRandom.current().nextInt(0, 20) == 0; }
 }
 
 trait Wait_1_10 {
@@ -33,29 +33,47 @@ trait Wait_36_50 {
     }
 }
 
+class Shuffled {
+    final static ThreadLocal<List<Integer>> SHORT = new ThreadLocal<List<Integer>>() {
+        @Override public List<Integer> initialValue() {
+            return (1..10).collect { it; };
+        }
+    }
+
+    final static ThreadLocal<List<Integer>> MEDIUM = new ThreadLocal<List<Integer>>() {
+        @Override public List<Integer> initialValue() {
+            return (11..35).collect { it; };
+        }
+    }
+
+    final static ThreadLocal<List<Integer>> LONG = new ThreadLocal<List<Integer>>() {
+        @Override public List<Integer> initialValue() {
+            return (36..50).collect { it; };
+        }
+    }
+}
+
 trait Shuffle_1_10 {
+    
     StateId execute() {
-        List waits = (1..10).collect { it; };
-        Collections.shuffle(waits);
-        sleep(waits[0]);
+        Collections.shuffle(Shuffled.SHORT.get());
+        sleep(Shuffled.SHORT.get().get(0).longValue());
         return StateId.random();
     }
 }
 
 trait Shuffle_11_35 {
     StateId execute() {
-        List waits = (11..35).collect { it; };
-        Collections.shuffle(waits);
-        sleep(waits[0]);
+        Collections.shuffle(Shuffled.MEDIUM.get());
+        sleep(Shuffled.MEDIUM.get().get(0).longValue());
         return StateId.random();
     }
 }
 
 trait Shuffle_36_50 {
     StateId execute() {
-        List waits = (36..50).collect { it; };
-        Collections.shuffle(waits);
-        sleep(waits[0]);
+        Collections.shuffle(Shuffled.LONG.get());
+        sleep(Shuffled.LONG.get().get(0).longValue());
         return StateId.random();
     }
 }
@@ -109,15 +127,18 @@ abstract class State {
         new RareShuffle_1_10(), new RareShuffle_11_35(), new RareShuffle_36_50() ].asImmutable();
     
     static final int MAX_LENGTH = INDEFINITE.size() + 1;
+    static final State GUARANTEED = new Guaranteed();
     
-    static List<State> chain(final int length) {
+    static List<State> chain(final int length, final List<State> states) {
         assert(length > 0);
         assert(length <= MAX_LENGTH);
-        List<State> toRandomize = new ArrayList(INDEFINITE);
-        Collections.shuffle(toRandomize);
-        List<State> toReturn = new ArrayList(length);
-        (0..<(length-1)).each { num -> toReturn.add(toRandomize[num]); };
-        toReturn.add(new Guaranteed());
-        return toReturn;
+        states.clear();
+        for(int i = 0; i < length; ++i) {
+            states.add(INDEFINITE[ThreadLocalRandom.current().nextInt(0, INDEFINITE.size())]);
+        }
+
+        Collections.shuffle(states);
+        states.add(GUARANTEED);
+        return states;
     }
 }
